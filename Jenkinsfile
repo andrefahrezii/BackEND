@@ -21,7 +21,7 @@ pipeline {
                     export TRIVY_PASSWORD=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
                     
                     # 3. Jalankan scanning dengan kredensial token
-                    ./trivy image --insecure --exit-code 1 image-registry.openshift-image-registry.svc:5000/andrefahrezi-dev/user-service:latest
+                    ./trivy image --scanners vuln --insecure --exit-code 1 image-registry.openshift-image-registry.svc:5000/andrefahrezi-dev/user-service:latest
                     '''
                 }
             }
