@@ -28,11 +28,11 @@ pipeline {
                     export TRIVY_PASSWORD=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
                     
                     ${TRIVY_BIN_PATH} image --scanners vuln \
-                        --severity HIGH,CRITICAL \
-                        --insecure \
-                        --skip-files ${TRIVY_BIN_PATH} \
-                        --exit-code 1 \
-                        ${IMAGE_NAME}
+                    --severity HIGH,CRITICAL \
+                    --insecure \
+                    --skip-files /app/trivy \
+                    --exit-code 1 \
+                    ${IMAGE_NAME}
                     """
                 }
             }
