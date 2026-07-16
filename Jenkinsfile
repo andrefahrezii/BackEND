@@ -4,7 +4,7 @@ pipeline {
         stage('Build Image') {
             steps {
                 script {
-                    sh 'docker build -t user-service:v1 .'
+                    sh 'oc start-build user-service --from-dir=. --follow'
                 }
             }
         }
