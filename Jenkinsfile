@@ -16,32 +16,48 @@ pipeline {
             steps {
                 script {
                     sh 'rm -rf .trivycache'
-                    // 1. Buat folder di luar /app (misalnya di /tmp atau langsung di workspace tapi di folder tersembunyi)
                     def TRIVY_BIN = "${WORKSPACE}/.trivy_tmp/trivy"
                     sh 'mkdir -p ${WORKSPACE}/.trivy_tmp'
                     
-                    // 2. Instal ke folder tersebut
+                    // Instalasi
                     sh 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ${WORKSPACE}/.trivy_tmp'
                     
-                    // 3. Scan dengan menambahkan --skip-files
-                    // Kita arahkan trivy untuk skip file binary-nya secara eksplisit
-                    sh '''
+                    // Menggunakan sh dengan double quotes agar variabel Groovy terbaca
+                    sh """
                     export TRIVY_USERNAME=openshift
-                    export TRIVY_PASSWORD=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                    export TRIVY_PASSWORD=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
                     
+                    # Menjalankan dengan path yang sudah dipastikan terbaca
                     ${TRIVY_BIN} image --scanners vuln \
                         --severity HIGH,CRITICAL \
                         --insecure \
                         --skip-files ${TRIVY_BIN} \
                         --exit-code 1 \
                         ${IMAGE_NAME}
-                    '''
+                    """
                 }
             }
         }
         stage('Deploy to OpenShift') {
             steps {
                 sh 'oc apply -f k8s-manifest.yaml'
+            }
+        }
+        stage('Verify Deployment') {
+            steps {
+                // Perintah ini akan menunggu status pod menjadi ready selama 120 detik
+                // Ganti 'user-service' dengan nama deployment Anda di k8s-manifest.yaml
+                sh 'oc rollout status deployment/user-service --timeout=120s'
+            }
+        }
+        stage('Health Check') {
+            steps {
+                // Mengambil URL route aplikasi
+                script {
+                    def route = sh(script: "oc get route user-service -o jsonpath='{.spec.host}'", returnStdout: true).trim()
+                    // Melakukan pengecekan status code 200 ke endpoint /health
+                    sh "curl -f http://${route}/health || exit 1"
+                }
             }
         }
     }
