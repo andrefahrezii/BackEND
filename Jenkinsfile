@@ -11,6 +11,7 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
+                    sh 'rm -rf .trivycache'
                     sh '''
                     export TRIVY_CACHE_DIR=.trivycache
                     # 1. Pastikan Trivy terinstal
