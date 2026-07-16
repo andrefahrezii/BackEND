@@ -1,5 +1,5 @@
 # 1. Gunakan versi Node.js LTS terbaru (v22) dan Alpine terbaru
-FROM node:22-alpine
+FROM gcr.io/distroless/nodejs22-debian12
 
 # 2. Update sistem paket Alpine dan upgrade npm ke versi terbaru untuk menambal kerentanan di tool bawaan
 RUN apk update && apk upgrade --no-cache && \
