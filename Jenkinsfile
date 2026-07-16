@@ -16,22 +16,21 @@ pipeline {
             steps {
                 script {
                     sh 'rm -rf .trivycache'
-                    def TRIVY_BIN = "${WORKSPACE}/.trivy_tmp/trivy"
+                    def TRIVY_BIN_PATH = "${WORKSPACE}/.trivy_tmp/trivy"
                     sh 'mkdir -p ${WORKSPACE}/.trivy_tmp'
                     
                     // Instalasi
                     sh 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ${WORKSPACE}/.trivy_tmp'
                     
-                    // Menggunakan sh dengan double quotes agar variabel Groovy terbaca
+                    // Gunakan --skip-files dengan path absolut
                     sh """
                     export TRIVY_USERNAME=openshift
                     export TRIVY_PASSWORD=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
                     
-                    # Menjalankan dengan path yang sudah dipastikan terbaca
-                    ${TRIVY_BIN} image --scanners vuln \
+                    ${TRIVY_BIN_PATH} image --scanners vuln \
                         --severity HIGH,CRITICAL \
                         --insecure \
-                        --skip-files ${TRIVY_BIN} \
+                        --skip-files ${TRIVY_BIN_PATH} \
                         --exit-code 1 \
                         ${IMAGE_NAME}
                     """
