@@ -17,7 +17,7 @@ pipeline {
                     
                     # Gunakan alamat internal registry OpenShift
                     # Format: <registry-service>:<port>/<project>/<image>:<tag>
-                    ./trivy image --exit-code 1 image-registry.openshift-image-registry.svc:5000/andrefahrezi-dev/user-service:latest
+                    ./trivy image --insecure --exit-code 1 image-registry.openshift-image-registry.svc:5000/andrefahrezi-dev/user-service:latest
                     '''
                 }
             }
