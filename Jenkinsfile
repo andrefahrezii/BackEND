@@ -1,4 +1,18 @@
-stage('Security Scan') {
+pipeline {
+    agent any
+    environment {
+        IMAGE_NAME = "image-registry.openshift-image-registry.svc:5000/andrefahrezi-dev/user-service:latest"
+        TRIVY_CACHE_DIR = "${WORKSPACE}/.trivycache"
+        // Menentukan folder untuk menyimpan binary agar tidak terpindai
+        TRIVY_BIN_DIR = "${WORKSPACE}/trivy-bin"
+    }
+    stages {
+        stage('Build Image') {
+            steps {
+                sh 'oc start-build user-service --from-dir=. --follow'
+            }
+        }
+        stage('Security Scan') {
             steps {
                 script {
                     sh 'rm -rf .trivycache'
@@ -25,3 +39,10 @@ stage('Security Scan') {
                 }
             }
         }
+        stage('Deploy to OpenShift') {
+            steps {
+                sh 'oc apply -f k8s-manifest.yaml'
+            }
+        }
+    }
+}
