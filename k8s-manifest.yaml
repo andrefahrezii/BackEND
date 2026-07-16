@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  replicas: 2 # Active-Active: Minimal 2 pod agar tetap nyala jika satu mati
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      securityContext:
+        runAsNonRoot: true # Keamanan: Tidak boleh jalan sebagai root
+        runAsUser: 1000
+      containers:
+      - name: user-service
+        image: user-service:v1
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef: # Keamanan: Password diambil dari Secret, bukan teks biasa[cite: 1, 3]
+              name: db-secret
+              key: password
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3091
