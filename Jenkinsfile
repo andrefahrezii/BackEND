@@ -13,10 +13,14 @@ pipeline {
                 script {
                     sh '''
                     export TRIVY_CACHE_DIR=.trivycache
+                    # 1. Pastikan Trivy terinstal
                     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b .
                     
-                    # Gunakan alamat internal registry OpenShift
-                    # Format: <registry-service>:<port>/<project>/<image>:<tag>
+                    # 2. Ambil token ServiceAccount untuk autentikasi ke registry
+                    export TRIVY_USERNAME=openshift
+                    export TRIVY_PASSWORD=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                    
+                    # 3. Jalankan scanning dengan kredensial token
                     ./trivy image --insecure --exit-code 1 image-registry.openshift-image-registry.svc:5000/andrefahrezi-dev/user-service:latest
                     '''
                 }
