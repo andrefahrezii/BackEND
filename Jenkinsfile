@@ -11,10 +11,11 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
-                    // Mengunduh dan menginstal Trivy secara dinamis di dalam pipeline
+                    // Gunakan direktori lokal yang dapat diakses oleh user Jenkins saat ini
                     sh '''
-                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-                    trivy image --exit-code 1 user-service:latest
+                    export TRIVY_CACHE_DIR=.trivycache
+                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b .
+                    ./trivy image --exit-code 1 user-service:latest
                     '''
                 }
             }
