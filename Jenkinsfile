@@ -10,9 +10,13 @@ pipeline {
         }
         stage('Security Scan') {
             steps {
-                // Di sini Anda akan menggunakan Trivy untuk scan image
-                // Jika ditemukan kerentanan (vulnerability), pipeline akan berhenti otomatis
-                sh 'trivy image --exit-code 1 user-service:v1'
+                script {
+                    // Mengunduh dan menginstal Trivy secara dinamis di dalam pipeline
+                    sh '''
+                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                    trivy image --exit-code 1 user-service:latest
+                    '''
+                }
             }
         }
         stage('Deploy to OpenShift') {
