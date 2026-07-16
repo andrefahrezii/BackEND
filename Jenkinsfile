@@ -1,9 +1,10 @@
 pipeline {
     agent any
     environment {
-        // Mendefinisikan lokasi image
         IMAGE_NAME = "image-registry.openshift-image-registry.svc:5000/andrefahrezi-dev/user-service:latest"
         TRIVY_CACHE_DIR = "${WORKSPACE}/.trivycache"
+        // Menentukan folder untuk menyimpan binary agar tidak terpindai
+        TRIVY_BIN_DIR = "${WORKSPACE}/trivy-bin"
     }
     stages {
         stage('Build Image') {
@@ -14,24 +15,19 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
-                    // 1. Bersihkan cache lama
                     sh 'rm -rf .trivycache'
+                    sh 'mkdir -p ${TRIVY_BIN_DIR}'
                     
-                    // 2. Instal Trivy ke /usr/local/bin (di luar direktori proyek)
-                    // Menggunakan sudo jika diperlukan, atau langsung ke path yang dapat diakses
-                    sh 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin'
+                    // Instal ke folder lokal yang pasti punya izin akses
+                    sh 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ${TRIVY_BIN_DIR}'
                     
-                    // 3. Autentikasi registry
-                    withCredentials([string(credentialsId: 'openshift-token', variable: 'TOKEN')]) { // Opsional: Gunakan Jenkins Credentials jika ada
-                        sh '''
-                        export TRIVY_USERNAME=openshift
-                        export TRIVY_PASSWORD=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-                        
-                        # 4. Scan image (tidak akan memindai binary trivy karena berada di /usr/local/bin)
-                        # Kita tambahkan --exit-code 1 hanya untuk HIGH dan CRITICAL
-                        /usr/local/bin/trivy image --scanners vuln --severity HIGH,CRITICAL --insecure --exit-code 1 ${IMAGE_NAME}
-                        '''
-                    }
+                    sh '''
+                    export TRIVY_USERNAME=openshift
+                    export TRIVY_PASSWORD=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                    
+                    # Jalankan scan dengan mengecualikan folder binary trivy agar tidak kena false positive
+                    ${TRIVY_BIN_DIR}/trivy image --scanners vuln --severity HIGH,CRITICAL --insecure --skip-dirs ${TRIVY_BIN_DIR} --exit-code 1 ${IMAGE_NAME}
+                    '''
                 }
             }
         }
