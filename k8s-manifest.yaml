@@ -19,9 +19,9 @@ spec:
         runAsUser: 1000
       containers:
       - name: user-service
-        image: user-service:v1
+        image: image-registry.openshift-image-registry.svc:5000/andrefahrezi-dev/user-service:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 3091
         env:
         - name: DB_PASSWORD
           valueFrom:
