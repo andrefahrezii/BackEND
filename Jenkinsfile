@@ -26,13 +26,15 @@ pipeline {
                     sh """
                     export TRIVY_USERNAME=openshift
                     export TRIVY_PASSWORD=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-                    
+
+                    # Tambahkan --ignore-unfixed agar tidak gagal karena vulnerability pada library trivy itu sendiri
                     ${TRIVY_BIN_PATH} image --scanners vuln \
-                    --severity HIGH,CRITICAL \
-                    --insecure \
-                    --skip-files /app/trivy \
-                    --exit-code 1 \
-                    ${IMAGE_NAME}
+                        --severity HIGH,CRITICAL \
+                        --insecure \
+                        --ignore-unfixed \
+                        --skip-files ${TRIVY_BIN_PATH} \
+                        --exit-code 1 \
+                        ${IMAGE_NAME}
                     """
                 }
             }

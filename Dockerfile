@@ -1,30 +1,18 @@
-# 1. Gunakan versi Node.js LTS terbaru (v22) dan Alpine terbaru
-FROM gcr.io/distroless/nodejs22-debian12
-
-# 2. Update sistem paket Alpine dan upgrade npm ke versi terbaru untuk menambal kerentanan di tool bawaan
-RUN apk update && apk upgrade --no-cache && \
-    npm install -g npm@latest
-
-# 3. Buat direktori kerja
+# Tahap 1: Build (Gunakan image Node standar)
+FROM node:22-alpine AS builder
 WORKDIR /app
-
-# 4. Copy file konfigurasi dependensi
 COPY package*.json ./
+# Instal dependencies
+RUN npm ci --only=production --ignore-scripts
 
-# 5. Install dependencies dengan bersih
-# Menambahkan --ignore-scripts untuk keamanan rantai pasok (supply chain)
-RUN npm ci --only=production --ignore-scripts && \
-    npm cache clean --force
-
-# 6. Copy source code aplikasi
+# Tahap 2: Runtime (Gunakan Distroless)
+FROM gcr.io/distroless/nodejs22-debian12
+WORKDIR /app
+# Salin folder hasil build dari tahap 1
+COPY --from=builder /app/node_modules ./node_modules
 COPY . .
 
-# 7. Pastikan semua file milik user 'node'
-RUN chown -R node:node /app
-
-# 8. Gunakan user 'node'
-USER node
-
+# Jalankan sebagai user node
+USER 1000
 EXPOSE 3091
-
 CMD ["node", "src/index.js"]
