@@ -61,5 +61,15 @@ pipeline {
                 }
             }
         }
+        post {
+        always {
+            script {
+                echo 'Membersihkan pod build yang selesai atau gagal...'
+                // Menghapus pod build yang sudah tidak diperlukan
+                sh 'oc delete pods -l buildconfig=user-service --field-selector=status.phase=Succeeded || true'
+                sh 'oc delete pods -l buildconfig=user-service --field-selector=status.phase=Failed || true'
+            }
+        }
+    }
     }
 }
